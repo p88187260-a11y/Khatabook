@@ -1,0 +1,1909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>KhataBook — Ledger App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet"/>
+<style>
+/* ============================================================
+   KHATABOOK WEB APP — GLOBAL STYLES
+   Single-file SPA. Screens toggled via .screen class.
+   Design: Refined fintech aesthetic — warm neutrals, deep teal accent,
+   clean typography, soft card shadows, subtle grain texture.
+   ============================================================ */
+
+/* --------- CSS RESET & VARIABLES --------- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Palette */
+  --clr-bg:          #f0ece6;
+  --clr-bg-warm:     #e8e2d9;
+  --clr-card:        #ffffff;
+  --clr-card-hover:  #fafafa;
+  --clr-accent:      #0d6efd;
+  --clr-accent-dark: #0a58ca;
+  --clr-accent-light:#d6e8ff;
+  --clr-success:     #198754;
+  --clr-success-bg:  #d1e7dd;
+  --clr-danger:      #dc3545;
+  --clr-danger-bg:   #f8d7da;
+  --clr-warning:     #ffc107;
+  --clr-warning-bg:  #fff3cd;
+  --clr-text:        #1e1e1e;
+  --clr-text-mid:    #5c5c5c;
+  --clr-text-light:  #9a9a9a;
+  --clr-border:      #ddd5c8;
+  --clr-sidebar:     #1a2332;
+  --clr-sidebar-hover:#253447;
+  --clr-sidebar-text:#c4cdd8;
+
+  /* Typography */
+  --font-heading: 'Playfair Display', Georgia, serif;
+  --font-body:    'DM Sans', system-ui, sans-serif;
+
+  /* Spacing */
+  --radius:  12px;
+  --radius-sm: 8px;
+  --shadow:  0 2px 16px rgba(0,0,0,.07);
+  --shadow-hover: 0 6px 24px rgba(0,0,0,.12);
+  --transition: .25s cubic-bezier(.4,0,.2,1);
+}
+
+html { font-size: 16px; -webkit-font-smoothing: antialiased; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--clr-bg);
+  color: var(--clr-text);
+  min-height: 100vh;
+  overflow-x: hidden;
+  /* subtle linen grain */
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.025'/%3E%3C/svg%3E");
+}
+
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; border: none; outline: none; }
+input, select, textarea { font-family: inherit; outline: none; }
+img { max-width: 100%; }
+
+/* --------- UTILITY --------- */
+.hidden { display: none !important; }
+.sr-only { position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0; }
+
+.badge {
+  display: inline-block;
+  font-size: .72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+.badge-admin   { background: var(--clr-accent-light); color: var(--clr-accent-dark); }
+.badge-user    { background: var(--clr-success-bg);   color: var(--clr-success); }
+.badge-danger  { background: var(--clr-danger-bg);    color: var(--clr-danger); }
+
+/* --------- TOAST --------- */
+#toast-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 340px;
+  width: 90vw;
+}
+.toast {
+  background: var(--clr-sidebar);
+  color: #fff;
+  padding: 14px 18px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-hover);
+  font-size: .88rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: slideIn .3s var(--transition) forwards;
+  border-left: 4px solid var(--clr-accent);
+}
+.toast.success { border-left-color: var(--clr-success); }
+.toast.error   { border-left-color: var(--clr-danger); }
+.toast.warning { border-left-color: var(--clr-warning); }
+.toast .toast-icon { font-size: 1.1rem; flex-shrink: 0; }
+@keyframes slideIn { from { transform: translateX(110%); opacity:0; } to { transform: translateX(0); opacity:1; } }
+
+/* --------- MODAL --------- */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(26,35,50,.55);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn .2s ease;
+}
+.modal {
+  background: var(--clr-card);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.18);
+  overflow: hidden;
+  animation: popIn .25s cubic-bezier(.34,1.56,.64,1);
+}
+.modal-header {
+  padding: 24px 28px 16px;
+  border-bottom: 1px solid var(--clr-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.modal-header h3 { font-family: var(--font-heading); font-size: 1.25rem; }
+.modal-close {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--clr-bg);
+  color: var(--clr-text-mid);
+  font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: background var(--transition);
+}
+.modal-close:hover { background: var(--clr-danger-bg); color: var(--clr-danger); }
+.modal-body { padding: 24px 28px 28px; }
+@keyframes popIn { from { transform: scale(.88); opacity:0; } to { transform: scale(1); opacity:1; } }
+@keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+/* --------- SCREEN SWITCHER --------- */
+.screen { display: none; min-height: 100vh; }
+.screen.active { display: flex; }
+
+/* ============================================================
+   LOGIN SCREEN
+   ============================================================ */
+#screen-login {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a2332 0%, #253447 50%, #1a2332 100%);
+  position: relative;
+  overflow: hidden;
+}
+/* decorative blobs */
+#screen-login::before, #screen-login::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  opacity: .18;
+  pointer-events: none;
+}
+#screen-login::before {
+  width: 500px; height: 500px;
+  background: var(--clr-accent);
+  top: -180px; left: -150px;
+}
+#screen-login::after {
+  width: 400px; height: 400px;
+  background: #0d9488;
+  bottom: -140px; right: -100px;
+}
+
+.login-card {
+  position: relative;
+  z-index: 1;
+  background: rgba(255,255,255,.06);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 28px;
+  padding: 44px 40px 40px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.3);
+}
+.login-logo {
+  text-align: center;
+  margin-bottom: 32px;
+}
+.login-logo .logo-icon {
+  width: 56px; height: 56px;
+  background: linear-gradient(135deg, var(--clr-accent), #0d9488);
+  border-radius: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  box-shadow: 0 8px 24px rgba(13,110,253,.35);
+}
+.login-logo .logo-icon svg { width: 28px; height: 28px; }
+.login-logo h1 {
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  color: #fff;
+  letter-spacing: -.02em;
+}
+.login-logo p { color: rgba(255,255,255,.5); font-size: .85rem; margin-top: 4px; }
+
+.login-card label {
+  display: block;
+  font-size: .78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: rgba(255,255,255,.55);
+  margin-bottom: 8px;
+}
+.login-card input {
+  width: 100%;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: var(--radius);
+  padding: 13px 16px;
+  color: #fff;
+  font-size: .95rem;
+  transition: border-color var(--transition), background var(--transition);
+  margin-bottom: 18px;
+}
+.login-card input::placeholder { color: rgba(255,255,255,.3); }
+.login-card input:focus {
+  border-color: var(--clr-accent);
+  background: rgba(255,255,255,.12);
+}
+
+.btn-login {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--clr-accent), #0d9488);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: var(--radius);
+  margin-top: 6px;
+  transition: transform .15s, box-shadow .2s;
+  box-shadow: 0 4px 18px rgba(13,110,253,.4);
+  position: relative;
+  overflow: hidden;
+}
+.btn-login:active { transform: scale(.97); }
+.btn-login:hover  { box-shadow: 0 6px 24px rgba(13,110,253,.5); }
+.btn-login .btn-spinner {
+  display: none;
+  width: 20px; height: 20px;
+  border: 3px solid rgba(255,255,255,.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+  margin: 0 auto;
+}
+.btn-login.loading .btn-text { display: none; }
+.btn-login.loading .btn-spinner { display: block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ============================================================
+   APP LAYOUT (Sidebar + Main)
+   ============================================================ */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* --- SIDEBAR --- */
+.sidebar {
+  width: 250px;
+  background: var(--clr-sidebar);
+  color: var(--clr-sidebar-text);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  inset-y: 0;
+  left: 0;
+  z-index: 100;
+  transition: transform .3s ease;
+}
+.sidebar-header {
+  padding: 28px 20px 24px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.sidebar-avatar {
+  width: 40px; height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--clr-accent), #0d9488);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+  color: #fff;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+.sidebar-header-info h4 { color: #fff; font-size: .92rem; font-weight: 600; }
+.sidebar-header-info span { font-size: .75rem; }
+
+.sidebar-nav { flex: 1; padding: 12px 12px; overflow-y: auto; }
+.nav-section-label {
+  font-size: .67rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: rgba(255,255,255,.25);
+  padding: 18px 12px 8px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  margin-bottom: 2px;
+  font-size: .88rem;
+  color: var(--clr-sidebar-text);
+  transition: background var(--transition), color var(--transition);
+  cursor: pointer;
+  user-select: none;
+}
+.nav-item:hover { background: var(--clr-sidebar-hover); color: #fff; }
+.nav-item.active {
+  background: var(--clr-accent);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(13,110,253,.35);
+}
+.nav-item .nav-icon { width: 20px; text-align: center; font-size: 1rem; flex-shrink: 0; }
+
+.sidebar-footer {
+  padding: 16px 12px;
+  border-top: 1px solid rgba(255,255,255,.07);
+}
+.btn-logout {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(220,53,69,.15);
+  color: #f08080;
+  font-size: .85rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background var(--transition);
+}
+.btn-logout:hover { background: rgba(220,53,69,.28); }
+
+/* --- MAIN CONTENT AREA --- */
+.main-content {
+  margin-left: 250px;
+  flex: 1;
+  min-height: 100vh;
+  padding: 28px 32px;
+  transition: margin-left .3s ease;
+}
+
+/* --- TOPBAR (mobile) --- */
+.topbar {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 60px;
+  background: var(--clr-card);
+  box-shadow: 0 2px 12px rgba(0,0,0,.08);
+  z-index: 90;
+  align-items: center;
+  padding: 0 18px;
+  gap: 14px;
+}
+.topbar-menu-btn {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: var(--clr-bg);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem;
+  color: var(--clr-text);
+}
+.topbar h2 { font-family: var(--font-heading); font-size: 1.1rem; flex: 1; }
+.topbar .topbar-avatar {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--clr-accent), #0d9488);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+  font-size: .82rem;
+}
+
+/* Sidebar overlay (mobile) */
+.sidebar-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.45);
+  z-index: 99;
+}
+
+/* --------- PAGE HEADER --------- */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.page-header h2 {
+  font-family: var(--font-heading);
+  font-size: 1.6rem;
+  letter-spacing: -.02em;
+}
+.page-header p { color: var(--clr-text-mid); font-size: .88rem; margin-top: 3px; }
+
+/* --------- BUTTONS --------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-size: .88rem;
+  font-weight: 600;
+  transition: transform .12s, box-shadow .2s, background var(--transition);
+}
+.btn:active { transform: scale(.96); }
+.btn-primary {
+  background: var(--clr-accent);
+  color: #fff;
+  box-shadow: 0 3px 12px rgba(13,110,253,.3);
+}
+.btn-primary:hover { background: var(--clr-accent-dark); box-shadow: 0 4px 16px rgba(13,110,253,.4); }
+.btn-secondary {
+  background: var(--clr-card);
+  color: var(--clr-text);
+  border: 1px solid var(--clr-border);
+}
+.btn-secondary:hover { background: var(--clr-bg); }
+.btn-danger { background: var(--clr-danger); color: #fff; box-shadow: 0 3px 10px rgba(220,53,69,.3); }
+.btn-danger:hover { background: #b52d3a; }
+.btn-success { background: var(--clr-success); color: #fff; box-shadow: 0 3px 10px rgba(25,135,84,.3); }
+.btn-success:hover { background: #157347; }
+.btn-sm { padding: 6px 12px; font-size: .8rem; border-radius: 6px; }
+.btn-icon {
+  width: 34px; height: 34px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+/* --------- STAT CARDS --------- */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.stat-card {
+  background: var(--clr-card);
+  border-radius: 16px;
+  padding: 22px 20px;
+  box-shadow: var(--shadow);
+  transition: box-shadow var(--transition), transform var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+.stat-card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+.stat-card::after {
+  content: '';
+  position: absolute;
+  top: -30px; right: -30px;
+  width: 100px; height: 100px;
+  border-radius: 50%;
+  opacity: .08;
+}
+.stat-card[data-color="blue"]::after   { background: var(--clr-accent); }
+.stat-card[data-color="green"]::after  { background: var(--clr-success); }
+.stat-card[data-color="orange"]::after { background: #fd7e14; }
+.stat-card[data-color="teal"]::after   { background: #0d9488; }
+
+.stat-card .stat-label {
+  font-size: .75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--clr-text-light);
+  margin-bottom: 8px;
+}
+.stat-card .stat-value {
+  font-size: 1.65rem;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  position: relative;
+  z-index: 1;
+}
+.stat-card .stat-sub {
+  font-size: .76rem;
+  color: var(--clr-text-light);
+  margin-top: 4px;
+  position: relative;
+  z-index: 1;
+}
+
+/* --------- FORM STYLES --------- */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.form-grid .full-col { grid-column: 1 / -1; }
+.form-group { display: flex; flex-direction: column; }
+.form-group label {
+  font-size: .76rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--clr-text-mid);
+  margin-bottom: 7px;
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 11px 14px;
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  font-size: .92rem;
+  color: var(--clr-text);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: var(--clr-accent);
+  box-shadow: 0 0 0 3px rgba(13,110,253,.15);
+}
+.form-group textarea { resize: vertical; min-height: 72px; }
+.form-group select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235c5c5c' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 38px; }
+.modal-actions { display: flex; gap: 10px; margin-top: 22px; justify-content: flex-end; }
+
+/* --------- CARD CONTAINER --------- */
+.card {
+  background: var(--clr-card);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.card-header {
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--clr-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.card-header h3 { font-size: 1rem; font-weight: 600; }
+.card-body { padding: 18px 22px; }
+
+/* --------- SEARCH / FILTER BAR --------- */
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.filter-bar input,
+.filter-bar select {
+  padding: 9px 14px;
+  border: 1px solid var(--clr-border);
+  border-radius: var(--radius-sm);
+  font-size: .87rem;
+  background: #fff;
+  min-width: 140px;
+}
+.filter-bar input:focus,
+.filter-bar select:focus {
+  border-color: var(--clr-accent);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(13,110,253,.12);
+}
+.search-wrap { position: relative; }
+.search-wrap input { padding-left: 38px; }
+.search-wrap .search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--clr-text-light);
+  font-size: .9rem;
+  pointer-events: none;
+}
+
+/* --------- TABLE --------- */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .87rem;
+}
+thead th {
+  text-align: left;
+  padding: 11px 16px;
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--clr-text-light);
+  border-bottom: 2px solid var(--clr-border);
+  white-space: nowrap;
+  background: var(--clr-bg);
+  position: sticky;
+  top: 0;
+}
+tbody tr {
+  border-bottom: 1px solid var(--clr-border);
+  transition: background var(--transition);
+}
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: #fafaf8; }
+tbody td {
+  padding: 13px 16px;
+  color: var(--clr-text);
+  white-space: nowrap;
+}
+.actions-cell { display: flex; gap: 6px; }
+
+/* --------- EMPTY STATE --------- */
+.empty-state {
+  text-align: center;
+  padding: 52px 20px;
+}
+.empty-state .empty-icon { font-size: 2.6rem; margin-bottom: 14px; opacity: .7; }
+.empty-state h4 { font-size: 1.05rem; margin-bottom: 6px; }
+.empty-state p { color: var(--clr-text-light); font-size: .87rem; max-width: 300px; margin: 0 auto; }
+
+/* --------- USER LIST (admin) --------- */
+.user-list { display: flex; flex-direction: column; gap: 10px; }
+.user-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: var(--clr-bg);
+  border-radius: 12px;
+  transition: background var(--transition);
+}
+.user-item:hover { background: var(--clr-bg-warm); }
+.user-item-avatar {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--clr-accent), #0d9488);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700;
+  font-size: .88rem;
+  flex-shrink: 0;
+}
+.user-item-info { flex: 1; }
+.user-item-info h5 { font-size: .92rem; font-weight: 600; }
+.user-item-info .badge { margin-left: 8px; }
+
+/* --------- SECTION PAGES (tab content) --------- */
+.tab-page { display: none; }
+.tab-page.active { display: block; animation: fadeUp .3s ease; }
+@keyframes fadeUp { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+
+/* ============================================================
+   RESPONSIVE — MOBILE
+   ============================================================ */
+@media (max-width: 768px) {
+  .main-content { margin-left: 0; padding: 78px 16px 80px; } /* Added bottom padding for mobile */
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.open { transform: translateX(0); }
+  .topbar { display: flex; }
+  .sidebar-overlay.show { display: block; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid .full-col { grid-column: 1; }
+  .card-header { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .login-card { padding: 34px 24px 30px; }
+  .page-header { flex-direction: column; }
+  
+  /* Mobile Tables -> Cards */
+  thead { display: none; }
+  tbody tr { 
+    display: block; 
+    margin-bottom: 16px; 
+    border: 1px solid var(--clr-border); 
+    border-radius: 12px; 
+    box-shadow: 0 2px 8px rgba(0,0,0,.04); 
+    background: #fff;
+    padding: 8px 0;
+  }
+  tbody td { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+    padding: 10px 16px; 
+    border: none; 
+    border-bottom: 1px solid #f4f4f4; 
+    text-align: right;
+  }
+  tbody td:last-child { border-bottom: none; }
+  tbody td::before { 
+    content: attr(data-label); 
+    font-weight: 600; 
+    color: var(--clr-text-light); 
+    font-size: .8rem; 
+    text-transform: uppercase;
+    margin-right: 12px;
+    text-align: left;
+  }
+  .actions-cell { justify-content: flex-end; }
+  
+  /* Modals on mobile */
+  .modal { 
+    width: 100%; 
+    max-width: 100%; 
+    border-radius: 16px 16px 0 0; 
+    margin: 0; 
+    position: absolute; 
+    bottom: 0; 
+    animation: slideUp .25s ease-out;
+  }
+  .modal-overlay { align-items: flex-end; padding: 0; }
+  @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+}
+@media (max-width: 400px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .stat-card .stat-value { font-size: 1.35rem; }
+}
+
+/* -- loading spinner full page -- */
+.page-loader {
+  position: fixed; inset: 0;
+  background: var(--clr-bg);
+  z-index: 9990;
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 16px;
+}
+.page-loader .loader-ring {
+  width: 44px; height: 44px;
+  border: 4px solid var(--clr-border);
+  border-top-color: var(--clr-accent);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+.page-loader p { color: var(--clr-text-mid); font-size: .9rem; }
+</style>
+</head>
+<body>
+
+<!-- ===================== TOAST CONTAINER ===================== -->
+<div id="toast-container"></div>
+
+<!-- ===================== PAGE LOADER ===================== -->
+<div class="page-loader hidden" id="page-loader">
+  <div class="loader-ring"></div>
+  <p>Loading…</p>
+</div>
+
+<!-- ============================================================
+     SCREEN 1 — LOGIN
+     ============================================================ -->
+<section class="screen active" id="screen-login">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 6h18M3 6v12a2 2 0 002 2h14a2 2 0 002-2V6M3 6l3-3h12l3 3"/>
+          <path d="M8 11h8M8 15h5"/>
+        </svg>
+      </div>
+      <h1>KhataBook</h1>
+      <p>Digital Ledger for Business</p>
+    </div>
+    <label for="login-username">Username</label>
+    <input type="text" id="login-username" placeholder="Enter your username" autocomplete="off"/>
+    <label for="login-password">Password</label>
+    <input type="password" id="login-password" placeholder="••••••••" autocomplete="off"/>
+    <button class="btn-login" id="btn-login">
+      <span class="btn-text">Sign In</span>
+      <div class="btn-spinner"></div>
+    </button>
+  </div>
+</section>
+
+<!-- ============================================================
+     SCREEN 2 — USER DASHBOARD
+     ============================================================ -->
+<section class="screen" id="screen-user">
+  <!-- Sidebar -->
+  <nav class="sidebar" id="sidebar-user">
+    <div class="sidebar-header">
+      <div class="sidebar-avatar" id="user-avatar-sidebar">U</div>
+      <div class="sidebar-header-info">
+        <h4 id="user-name-sidebar">Username</h4>
+        <span class="badge badge-user">User</span>
+      </div>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-section-label">Menu</div>
+      <div class="nav-item active" data-tab="user-dashboard">
+        <span class="nav-icon">📊</span> Dashboard
+      </div>
+      <div class="nav-item" data-tab="user-add">
+        <span class="nav-icon">➕</span> Add Entry
+      </div>
+      <div class="nav-item" data-tab="user-history">
+        <span class="nav-icon">📜</span> History
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <button class="btn-logout" id="btn-logout-user">
+        <span>🚪</span> Logout
+      </button>
+    </div>
+  </nav>
+  <div class="sidebar-overlay" id="overlay-user"></div>
+
+  <!-- Topbar (mobile) -->
+  <header class="topbar" id="topbar-user">
+    <button class="topbar-menu-btn" id="topbar-menu-user">☰</button>
+    <h2 id="topbar-title-user">Dashboard</h2>
+    <div class="topbar-avatar" id="topbar-avatar-user">U</div>
+  </header>
+
+  <!-- Main -->
+  <main class="main-content">
+    <!-- TAB: Dashboard Overview -->
+    <div class="tab-page active" id="tab-user-dashboard">
+      <div class="page-header">
+        <div>
+          <h2>Dashboard</h2>
+          <p>Your ledger at a glance</p>
+        </div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card" data-color="blue">
+          <div class="stat-label">Total Entries</div>
+          <div class="stat-value" id="user-stat-entries">0</div>
+          <div class="stat-sub">all time</div>
+        </div>
+        <div class="stat-card" data-color="green">
+          <div class="stat-label">Total Amount</div>
+          <div class="stat-value" id="user-stat-total">₹0</div>
+          <div class="stat-sub">sum of totals</div>
+        </div>
+        <div class="stat-card" data-color="orange">
+          <div class="stat-label">This Month</div>
+          <div class="stat-value" id="user-stat-month">₹0</div>
+          <div class="stat-sub">current month</div>
+        </div>
+        <div class="stat-card" data-color="teal">
+          <div class="stat-label">Avg per Entry</div>
+          <div class="stat-value" id="user-stat-avg">₹0</div>
+          <div class="stat-sub">average</div>
+        </div>
+      </div>
+      <!-- Recent Transactions -->
+      <div class="card">
+        <div class="card-header">
+          <h3>📋 Recent Transactions</h3>
+          <button class="btn btn-primary btn-sm" data-tab="user-history" onclick="switchUserTab('user-history')">View All →</button>
+        </div>
+        <div class="card-body">
+          <div class="table-wrap">
+            <table id="user-recent-table">
+              <thead><tr>
+                <th>Date</th><th>Item</th><th>Rate</th><th>Total</th><th>Notes</th>
+              </tr></thead>
+              <tbody id="user-recent-tbody"></tbody>
+            </table>
+          </div>
+          <div class="empty-state hidden" id="user-recent-empty">
+            <div class="empty-icon">📭</div>
+            <h4>No transactions yet</h4>
+            <p>Add your first khata entry to see it here.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Add Entry -->
+    <div class="tab-page" id="tab-user-add">
+      <div class="page-header">
+        <div>
+          <h2>New Entry</h2>
+          <p>Log a transaction to your khata</p>
+        </div>
+      </div>
+      <div class="card" style="max-width:580px;">
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Item Name *</label>
+              <input type="text" id="new-item-name" placeholder="e.g. Cement bags"/>
+            </div>
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" id="new-date"/>
+            </div>
+            <div class="form-group">
+              <label>Rate (₹) *</label>
+              <input type="number" id="new-rate" placeholder="0.00" min="0" step="0.01"/>
+            </div>
+            <div class="form-group">
+              <label>Total (₹) *</label>
+              <input type="number" id="new-total" placeholder="0.00" min="0" step="0.01"/>
+            </div>
+            <div class="form-group full-col">
+              <label>Notes</label>
+              <textarea id="new-notes" placeholder="Optional notes…"></textarea>
+            </div>
+          </div>
+          <div style="margin-top:22px; display:flex; gap:10px;">
+            <button class="btn btn-primary" id="btn-add-entry">
+              <span>💾</span> Save Entry
+            </button>
+            <button class="btn btn-secondary" id="btn-clear-form">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: History -->
+    <div class="tab-page" id="tab-user-history">
+      <div class="page-header">
+        <div>
+          <h2>History</h2>
+          <p>All your past transactions</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="filter-bar">
+            <div class="search-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="user-search" placeholder="Search items…"/>
+            </div>
+            <input type="date" id="user-filter-date"/>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Date</th><th>Item</th><th>Rate</th><th>Total</th><th>Notes</th>
+              </tr></thead>
+              <tbody id="user-history-tbody"></tbody>
+            </table>
+          </div>
+          <div class="empty-state hidden" id="user-history-empty">
+            <div class="empty-icon">🔍</div>
+            <h4>No results found</h4>
+            <p>Try adjusting your search or filter.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</section>
+
+<!-- ============================================================
+     SCREEN 3 — ADMIN DASHBOARD
+     ============================================================ -->
+<section class="screen" id="screen-admin">
+  <!-- Sidebar -->
+  <nav class="sidebar" id="sidebar-admin">
+    <div class="sidebar-header">
+      <div class="sidebar-avatar" id="admin-avatar-sidebar">A</div>
+      <div class="sidebar-header-info">
+        <h4 id="admin-name-sidebar">Admin</h4>
+        <span class="badge badge-admin">Admin</span>
+      </div>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-section-label">Dashboard</div>
+      <div class="nav-item active" data-tab="admin-dashboard">
+        <span class="nav-icon">📊</span> Overview
+      </div>
+      <div class="nav-section-label">Transactions</div>
+      <div class="nav-item" data-tab="admin-transactions">
+        <span class="nav-icon">📜</span> All Transactions
+      </div>
+      <div class="nav-item" data-tab="admin-add">
+        <span class="nav-icon">➕</span> Add Transaction
+      </div>
+      <div class="nav-section-label">Users</div>
+      <div class="nav-item" data-tab="admin-users">
+        <span class="nav-icon">👥</span> Manage Users
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <button class="btn-logout" id="btn-logout-admin">
+        <span>🚪</span> Logout
+      </button>
+    </div>
+  </nav>
+  <div class="sidebar-overlay" id="overlay-admin"></div>
+
+  <!-- Topbar (mobile) -->
+  <header class="topbar" id="topbar-admin">
+    <button class="topbar-menu-btn" id="topbar-menu-admin">☰</button>
+    <h2 id="topbar-title-admin">Overview</h2>
+    <div class="topbar-avatar" id="topbar-avatar-admin">A</div>
+  </header>
+
+  <!-- Main -->
+  <main class="main-content">
+    <!-- TAB: Admin Overview -->
+    <div class="tab-page active" id="tab-admin-dashboard">
+      <div class="page-header">
+        <div>
+          <h2>Admin Panel</h2>
+          <p>Full control of all ledger data</p>
+        </div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card" data-color="blue">
+          <div class="stat-label">Total Users</div>
+          <div class="stat-value" id="admin-stat-users">0</div>
+          <div class="stat-sub">registered</div>
+        </div>
+        <div class="stat-card" data-color="green">
+          <div class="stat-label">Total Transactions</div>
+          <div class="stat-value" id="admin-stat-txns">0</div>
+          <div class="stat-sub">all users</div>
+        </div>
+        <div class="stat-card" data-color="orange">
+          <div class="stat-label">Total Amount</div>
+          <div class="stat-value" id="admin-stat-total">₹0</div>
+          <div class="stat-sub">grand total</div>
+        </div>
+        <div class="stat-card" data-color="teal">
+          <div class="stat-label">This Month</div>
+          <div class="stat-value" id="admin-stat-month">₹0</div>
+          <div class="stat-sub">current month</div>
+        </div>
+      </div>
+      <!-- Recent + User Summary -->
+      <div style="display:grid; grid-template-columns:1.6fr 1fr; gap:20px; align-items:start;">
+        <div class="card">
+          <div class="card-header"><h3>📋 Recent Activity</h3></div>
+          <div class="card-body">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Date</th><th>User</th><th>Item</th><th>Total</th></tr></thead>
+                <tbody id="admin-recent-tbody"></tbody>
+              </table>
+            </div>
+            <div class="empty-state hidden" id="admin-recent-empty">
+              <div class="empty-icon">📭</div><h4>No activity</h4>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>👥 Users</h3></div>
+          <div class="card-body">
+            <div class="user-list" id="admin-user-summary"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: All Transactions -->
+    <div class="tab-page" id="tab-admin-transactions">
+      <div class="page-header">
+        <div>
+          <h2>All Transactions</h2>
+          <p>View, edit, or delete any entry</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="filter-bar">
+            <div class="search-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="admin-search" placeholder="Search…"/>
+            </div>
+            <select id="admin-filter-user"><option value="">All Users</option></select>
+            <input type="date" id="admin-filter-date"/>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Date</th><th>User</th><th>Item</th><th>Rate</th><th>Total</th><th>Notes</th><th>Actions</th>
+              </tr></thead>
+              <tbody id="admin-txn-tbody"></tbody>
+            </table>
+          </div>
+          <div class="empty-state hidden" id="admin-txn-empty">
+            <div class="empty-icon">🔍</div><h4>No results</h4><p>Adjust filters.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Admin Add Transaction -->
+    <div class="tab-page" id="tab-admin-add">
+      <div class="page-header">
+        <div>
+          <h2>Add Transaction</h2>
+          <p>Create an entry on behalf of any user</p>
+        </div>
+      </div>
+      <div class="card" style="max-width:580px;">
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>User *</label>
+              <select id="admin-add-user"><option value="">Select user</option></select>
+            </div>
+            <div class="form-group">
+              <label>Date</label>
+              <input type="date" id="admin-add-date"/>
+            </div>
+            <div class="form-group">
+              <label>Item Name *</label>
+              <input type="text" id="admin-add-item" placeholder="e.g. Raw materials"/>
+            </div>
+            <div class="form-group">
+              <label>Rate (₹) *</label>
+              <input type="number" id="admin-add-rate" placeholder="0.00" min="0" step="0.01"/>
+            </div>
+            <div class="form-group">
+              <label>Total (₹) *</label>
+              <input type="number" id="admin-add-total" placeholder="0.00" min="0" step="0.01"/>
+            </div>
+            <div class="form-group full-col">
+              <label>Notes</label>
+              <textarea id="admin-add-notes" placeholder="Optional…"></textarea>
+            </div>
+          </div>
+          <div style="margin-top:22px; display:flex; gap:10px;">
+            <button class="btn btn-primary" id="btn-admin-add-entry"><span>💾</span> Save Entry</button>
+            <button class="btn btn-secondary" id="btn-admin-clear-form">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: Manage Users -->
+    <div class="tab-page" id="tab-admin-users">
+      <div class="page-header">
+        <div>
+          <h2>Manage Users</h2>
+          <p>Add or remove accounts</p>
+        </div>
+        <button class="btn btn-primary" id="btn-open-add-user"><span>➕</span> Add User</button>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <div class="user-list" id="admin-users-list"></div>
+          <div class="empty-state hidden" id="admin-users-empty">
+            <div class="empty-icon">👤</div><h4>No users</h4><p>Add the first user.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</section>
+
+<!-- ============================================================
+     MODALS
+     ============================================================ -->
+<!-- Edit Transaction Modal -->
+<div class="modal-overlay hidden" id="modal-edit">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>✏️ Edit Transaction</h3>
+      <button class="modal-close" data-close="modal-edit">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id"/>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="edit-date"/>
+        </div>
+        <div class="form-group">
+          <label>Item Name</label>
+          <input type="text" id="edit-item"/>
+        </div>
+        <div class="form-group">
+          <label>Rate (₹)</label>
+          <input type="number" id="edit-rate" step="0.01"/>
+        </div>
+        <div class="form-group">
+          <label>Total (₹)</label>
+          <input type="number" id="edit-total" step="0.01"/>
+        </div>
+        <div class="form-group full-col">
+          <label>Notes</label>
+          <textarea id="edit-notes"></textarea>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" data-close="modal-edit">Cancel</button>
+        <button class="btn btn-primary" id="btn-save-edit"><span>💾</span> Save Changes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal-overlay hidden" id="modal-add-user">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>👤 Add New User</h3>
+      <button class="modal-close" data-close="modal-add-user">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group full-col">
+          <label>Username *</label>
+          <input type="text" id="new-user-name" placeholder="e.g. john_doe"/>
+        </div>
+        <div class="form-group full-col">
+          <label>Password *</label>
+          <input type="password" id="new-user-pass" placeholder="Set password"/>
+        </div>
+        <div class="form-group full-col">
+          <label>Role</label>
+          <select id="new-user-role">
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" data-close="modal-add-user">Cancel</button>
+        <button class="btn btn-success" id="btn-create-user"><span>✓</span> Create User</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Delete Modal -->
+<div class="modal-overlay hidden" id="modal-confirm">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>⚠️ Confirm Delete</h3>
+      <button class="modal-close" data-close="modal-confirm">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--clr-text-mid); margin-bottom:4px;" id="confirm-message">Are you sure you want to delete this item?</p>
+      <p style="font-size:.82rem; color:var(--clr-text-light);">This action cannot be undone.</p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" data-close="modal-confirm">Cancel</button>
+        <button class="btn btn-danger" id="btn-confirm-action"><span>🗑️</span> Delete</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     APP JAVASCRIPT
+     ============================================================ -->
+<script>
+// ================================================================
+// API CALL WRAPPER
+// ================================================================
+const API_URL = "https://script.google.com/macros/s/AKfycbyNzv3khsHzGQYOwCNy4Nl9k9-6Z68R4UruwZv68PjWMqrWSl5DgL0tYJcuYjBShLTptQ/exec";
+
+// Modified to connect to deployed Apps Script Web App
+async function apiCall(payload) {
+  const res = await fetch(API_URL, {
+    method: "POST",
+    // Use text/plain to avoid CORS preflight (OPTIONS) request which GAS doesn't handle
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(payload)
+  });
+  return res.json();
+}
+let appState = {
+  token:        null,
+  username:     null,
+  role:         null,
+  transactions: [],   // cached from API
+  users:        []    // cached (admin)
+};
+
+// ================================================================
+// TOAST
+// ================================================================
+function showToast(msg, type = 'info') {
+  const icons = { success:'✓', error:'✕', warning:'⚠', info:'ℹ' };
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = 'toast ' + type;
+  toast.innerHTML = `<span class="toast-icon">${icons[type]||'ℹ'}</span><span>${msg}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3200);
+}
+
+// ================================================================
+// PAGE LOADER
+// ================================================================
+function showLoader(show) {
+  document.getElementById('page-loader').classList.toggle('hidden', !show);
+}
+
+// ================================================================
+// MODAL HELPERS
+// ================================================================
+function openModal(id)  { document.getElementById(id).classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+document.querySelectorAll('[data-close]').forEach(el => {
+  el.addEventListener('click', () => closeModal(el.dataset.close));
+});
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.classList.add('hidden');
+  });
+});
+
+// ================================================================
+// SCREEN SWITCHER
+// ================================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ================================================================
+// SIDEBAR / NAV (shared logic)
+// ================================================================
+function initSidebar(screenId) {
+  const sidebar = screenId === 'screen-user' ? document.getElementById('sidebar-user') : document.getElementById('sidebar-admin');
+  const overlay = screenId === 'screen-user' ? document.getElementById('overlay-user') : document.getElementById('overlay-admin');
+  const menuBtn = screenId === 'screen-user' ? document.getElementById('topbar-menu-user') : document.getElementById('topbar-menu-admin');
+
+  menuBtn.addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('show');
+  });
+  overlay.addEventListener('click', () => {
+    sidebar.classList.remove('open');
+    overlay.classList.remove('show');
+  });
+}
+
+// ================================================================
+// TAB SWITCHING
+// ================================================================
+function switchUserTab(tabName) {
+  // deactivate all tabs & nav items in user screen
+  document.querySelectorAll('#screen-user .tab-page').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#screen-user .nav-item').forEach(n => n.classList.remove('active'));
+  // activate target
+  document.getElementById('tab-' + tabName).classList.add('active');
+  document.querySelectorAll('#screen-user .nav-item').forEach(n => { if (n.dataset.tab === tabName) n.classList.add('active'); });
+  document.getElementById('topbar-title-user').textContent = tabName.includes('add') ? 'Add Entry' : tabName.includes('history') ? 'History' : 'Dashboard';
+  // close mobile sidebar
+  document.getElementById('sidebar-user').classList.remove('open');
+  document.getElementById('overlay-user').classList.remove('show');
+  // refresh data
+  if (tabName === 'user-history') renderUserHistory();
+  if (tabName === 'user-dashboard') loadUserDashboard();
+}
+function switchAdminTab(tabName) {
+  document.querySelectorAll('#screen-admin .tab-page').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#screen-admin .nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-' + tabName).classList.add('active');
+  document.querySelectorAll('#screen-admin .nav-item').forEach(n => { if (n.dataset.tab === tabName) n.classList.add('active'); });
+  const titles = { 'admin-dashboard':'Overview', 'admin-transactions':'Transactions', 'admin-add':'Add Entry', 'admin-users':'Users' };
+  document.getElementById('topbar-title-admin').textContent = titles[tabName] || 'Admin';
+  document.getElementById('sidebar-admin').classList.remove('open');
+  document.getElementById('overlay-admin').classList.remove('show');
+  // refresh
+  if (tabName === 'admin-dashboard') loadAdminDashboard();
+  if (tabName === 'admin-transactions') renderAdminTransactions();
+  if (tabName === 'admin-users') renderAdminUsers();
+  if (tabName === 'admin-add') populateAdminAddUserSelect();
+}
+
+// Nav clicks
+document.querySelectorAll('#screen-user .nav-item').forEach(el => {
+  el.addEventListener('click', () => switchUserTab(el.dataset.tab));
+});
+document.querySelectorAll('#screen-admin .nav-item').forEach(el => {
+  el.addEventListener('click', () => switchAdminTab(el.dataset.tab));
+});
+
+// ================================================================
+// LOGIN
+// ================================================================
+document.getElementById('btn-login').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-login');
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value.trim();
+  if (!username || !password) { showToast('Please enter username and password.', 'warning'); return; }
+
+  btn.classList.add('loading');
+  try {
+    const data = await apiCall({ action: 'login', username, password });
+    if (data.success) {
+      appState.token    = data.token;
+      appState.username = data.username;
+      appState.role     = data.role;
+      showToast('Welcome, ' + data.username + '!', 'success');
+      if (data.role === 'admin') {
+        initAdminUI();
+        showScreen('screen-admin');
+        loadAdminDashboard();
+      } else {
+        initUserUI();
+        showScreen('screen-user');
+        loadUserDashboard();
+      }
+    } else {
+      showToast(data.message || 'Login failed.', 'error');
+    }
+  } catch (e) {
+    showToast('Network error. Check your connection.', 'error');
+  }
+  btn.classList.remove('loading');
+});
+
+// Enter key on password
+document.getElementById('login-password').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('btn-login').click();
+});
+
+// ================================================================
+// LOGOUT
+// ================================================================
+function logout() {
+  appState = { token: null, username: null, role: null, transactions: [], users: [] };
+  document.getElementById('login-username').value = '';
+  document.getElementById('login-password').value = '';
+  showScreen('screen-login');
+  showToast('Logged out.', 'info');
+}
+document.getElementById('btn-logout-user').addEventListener('click', logout);
+document.getElementById('btn-logout-admin').addEventListener('click', logout);
+
+// ================================================================
+// FORMAT HELPERS
+// ================================================================
+function fmt(num) { return '₹' + Number(num).toLocaleString('en-IN', { minimumFractionDigits: 2 }); }
+function today() { return new Date().toISOString().split('T')[0]; }
+function currentMonth() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); }
+
+// ================================================================
+// USER DASHBOARD
+// ================================================================
+function initUserUI() {
+  const initials = appState.username.charAt(0).toUpperCase();
+  document.getElementById('user-avatar-sidebar').textContent  = initials;
+  document.getElementById('user-name-sidebar').textContent    = appState.username;
+  document.getElementById('topbar-avatar-user').textContent   = initials;
+  document.getElementById('new-date').value = today();
+  initSidebar('screen-user');
+}
+
+async function loadUserDashboard() {
+  showLoader(true);
+  try {
+    const data = await apiCall({ action: 'get_transactions', token: appState.token });
+    if (data.success) {
+      appState.transactions = data.transactions;
+      // Stats
+      const total   = appState.transactions.reduce((s,t) => s + Number(t.total), 0);
+      const count   = appState.transactions.length;
+      const mon     = currentMonth();
+      const monthTx = appState.transactions.filter(t => String(t.date).startsWith(mon));
+      const monthAmt= monthTx.reduce((s,t) => s + Number(t.total), 0);
+      const avg     = count ? total / count : 0;
+
+      document.getElementById('user-stat-entries').textContent = count;
+      document.getElementById('user-stat-total').textContent   = fmt(total);
+      document.getElementById('user-stat-month').textContent   = fmt(monthAmt);
+      document.getElementById('user-stat-avg').textContent     = fmt(avg);
+
+      // Recent (last 6)
+      const recent = [...appState.transactions].slice(-6).reverse();
+      const tbody  = document.getElementById('user-recent-tbody');
+      const empty  = document.getElementById('user-recent-empty');
+      
+      if (recent.length === 0) { 
+        tbody.innerHTML = '';
+        empty.classList.remove('hidden'); 
+      } else {
+        empty.classList.add('hidden');
+        // Optimized rendering with data-label for mobile responsiveness
+        tbody.innerHTML = recent.map(t => `<tr>
+          <td data-label="Date">${t.date}</td>
+          <td data-label="Item">${escHtml(t.item_name)}</td>
+          <td data-label="Rate">${fmt(t.rate)}</td>
+          <td data-label="Total"><strong>${fmt(t.total)}</strong></td>
+          <td data-label="Notes" style="color:var(--clr-text-mid); max-width:150px; overflow:hidden; text-overflow:ellipsis;">${escHtml(t.notes)}</td>
+        </tr>`).join('');
+      }
+    }
+  } catch(e) { showToast('Failed to load data.', 'error'); }
+  showLoader(false);
+}
+
+// --- Render full history with search/filter ---
+function renderUserHistory() {
+  const search = document.getElementById('user-search').value.toLowerCase();
+  const date   = document.getElementById('user-filter-date').value;
+  let list = appState.transactions || [];
+  if (search) list = list.filter(t => t.item_name.toLowerCase().includes(search) || (t.notes||'').toLowerCase().includes(search));
+  if (date)   list = list.filter(t => t.date === date);
+
+  const tbody = document.getElementById('user-history-tbody');
+  const empty = document.getElementById('user-history-empty');
+  
+  if (list.length === 0) { 
+    tbody.innerHTML = '';
+    empty.classList.remove('hidden'); 
+    return; 
+  }
+  
+  empty.classList.add('hidden');
+  // Optimized rendering with data-label
+  tbody.innerHTML = list.slice().reverse().map(t => `<tr>
+    <td data-label="Date">${t.date}</td>
+    <td data-label="Item">${escHtml(t.item_name)}</td>
+    <td data-label="Rate">${fmt(t.rate)}</td>
+    <td data-label="Total"><strong>${fmt(t.total)}</strong></td>
+    <td data-label="Notes" style="color:var(--clr-text-mid);">${escHtml(t.notes)}</td>
+  </tr>`).join('');
+}
+document.getElementById('user-search').addEventListener('input', renderUserHistory);
+document.getElementById('user-filter-date').addEventListener('change', renderUserHistory);
+
+// --- Add Entry ---
+document.getElementById('btn-add-entry').addEventListener('click', async () => {
+  const item  = document.getElementById('new-item-name').value.trim();
+  const rate  = document.getElementById('new-rate').value;
+  const total = document.getElementById('new-total').value;
+  const notes = document.getElementById('new-notes').value.trim();
+  const date  = document.getElementById('new-date').value || today();
+
+  if (!item || !rate || !total) { showToast('Item name, rate, and total are required.', 'warning'); return; }
+
+  showLoader(true);
+  try {
+    const data = await apiCall({
+      action:'add_transaction', token: appState.token,
+      date, item_name: item, rate, total, notes
+    });
+    if (data.success) {
+      showToast('Entry added successfully!', 'success');
+      // clear form
+      document.getElementById('new-item-name').value = '';
+      document.getElementById('new-rate').value      = '';
+      document.getElementById('new-total').value     = '';
+      document.getElementById('new-notes').value     = '';
+      document.getElementById('new-date').value      = today();
+      // refresh
+      loadUserDashboard();
+    } else { showToast(data.message, 'error'); }
+  } catch(e) { showToast('Network error.', 'error'); }
+  showLoader(false);
+});
+document.getElementById('btn-clear-form').addEventListener('click', () => {
+  ['new-item-name','new-rate','new-total','new-notes'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('new-date').value = today();
+});
+
+// ================================================================
+// ADMIN DASHBOARD
+// ================================================================
+function initAdminUI() {
+  const initials = appState.username.charAt(0).toUpperCase();
+  document.getElementById('admin-avatar-sidebar').textContent  = initials;
+  document.getElementById('admin-name-sidebar').textContent    = appState.username;
+  document.getElementById('topbar-avatar-admin').textContent   = initials;
+  document.getElementById('admin-add-date').value = today();
+  initSidebar('screen-admin');
+}
+
+async function loadAdminDashboard() {
+  showLoader(true);
+  try {
+    // Fetch users + transactions in parallel
+    const [txnRes, userRes] = await Promise.all([
+      apiCall({ action:'get_transactions', token: appState.token }),
+      apiCall({ action:'get_users', token: appState.token })
+    ]);
+    if (txnRes.success) appState.transactions = txnRes.transactions;
+    if (userRes.success) appState.users = userRes.users;
+
+    // Stats
+    const total    = appState.transactions.reduce((s,t) => s + Number(t.total), 0);
+    const mon      = currentMonth();
+    const monthAmt = appState.transactions.filter(t => String(t.date).startsWith(mon)).reduce((s,t) => s + Number(t.total), 0);
+
+    document.getElementById('admin-stat-users').textContent  = appState.users.length;
+    document.getElementById('admin-stat-txns').textContent   = appState.transactions.length;
+    document.getElementById('admin-stat-total').textContent  = fmt(total);
+    document.getElementById('admin-stat-month').textContent  = fmt(monthAmt);
+
+    // Recent (last 8)
+    const recent = [...appState.transactions].slice(-8).reverse();
+    const tbody  = document.getElementById('admin-recent-tbody');
+    const empty  = document.getElementById('admin-recent-empty');
+    
+    if (!recent.length) { 
+      tbody.innerHTML = '';
+      empty.classList.remove('hidden'); 
+    } else {
+      empty.classList.add('hidden');
+      tbody.innerHTML = recent.map(t => `<tr>
+        <td data-label="Date">${t.date}</td>
+        <td data-label="User"><span class="badge badge-user">${escHtml(t.user)}</span></td>
+        <td data-label="Item">${escHtml(t.item_name)}</td>
+        <td data-label="Total"><strong>${fmt(t.total)}</strong></td>
+      </tr>`).join('');
+    }
+
+    // User summary sidebar
+    const sumContainer = document.getElementById('admin-user-summary');
+    sumContainer.innerHTML = appState.users.map(u => {
+      const cnt = appState.transactions.filter(t => t.user === u.username).length;
+      return `<div class="user-item">
+        <div class="user-item-avatar">${u.username.charAt(0).toUpperCase()}</div>
+        <div class="user-item-info"><h5>${escHtml(u.username)} <span class="badge ${u.role==='admin'?'badge-admin':'badge-user'}">${u.role}</span></h5></div>
+        <span style="font-size:.8rem; color:var(--clr-text-light);">${cnt} txn</span>
+      </div>`;
+    }).join('');
+
+    // Populate user filter dropdown
+    const sel = document.getElementById('admin-filter-user');
+    sel.innerHTML = '<option value="">All Users</option>';
+    appState.users.forEach(u => { sel.innerHTML += `<option value="${u.username}">${u.username}</option>`; });
+
+  } catch(e) { showToast('Failed to load admin data.', 'error'); }
+  showLoader(false);
+}
+
+// --- Admin Transactions Table ---
+function renderAdminTransactions() {
+  const search = document.getElementById('admin-search').value.toLowerCase();
+  const user   = document.getElementById('admin-filter-user').value;
+  const date   = document.getElementById('admin-filter-date').value;
+  let list = appState.transactions || [];
+  if (search) list = list.filter(t => t.item_name.toLowerCase().includes(search) || (t.notes||'').toLowerCase().includes(search) || t.user.toLowerCase().includes(search));
+  if (user)   list = list.filter(t => t.user === user);
+  if (date)   list = list.filter(t => t.date === date);
+
+  const tbody = document.getElementById('admin-txn-tbody');
+  const empty = document.getElementById('admin-txn-empty');
+  
+  if (!list.length) { 
+    tbody.innerHTML = '';
+    empty.classList.remove('hidden'); 
+    return; 
+  }
+  
+  empty.classList.add('hidden');
+  tbody.innerHTML = list.slice().reverse().map(t => `<tr>
+    <td data-label="Date">${t.date}</td>
+    <td data-label="User"><span class="badge badge-user">${escHtml(t.user)}</span></td>
+    <td data-label="Item">${escHtml(t.item_name)}</td>
+    <td data-label="Rate">${fmt(t.rate)}</td>
+    <td data-label="Total"><strong>${fmt(t.total)}</strong></td>
+    <td data-label="Notes" style="color:var(--clr-text-mid); max-width:120px; overflow:hidden; text-overflow:ellipsis;">${escHtml(t.notes)}</td>
+    <td data-label="Actions">
+      <div class="actions-cell">
+        <button class="btn btn-secondary btn-sm btn-icon" onclick="openEditModal('${t.id}')">✏️</button>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="confirmDelete('${t.id}', '${escHtml(t.item_name)}')">🗑️</button>
+      </div>
+    </td>
+  </tr>`).join('');
+}
+document.getElementById('admin-search').addEventListener('input', renderAdminTransactions);
+document.getElementById('admin-filter-user').addEventListener('change', renderAdminTransactions);
+document.getElementById('admin-filter-date').addEventListener('change', renderAdminTransactions);
+
+// --- Edit Modal ---
+function openEditModal(id) {
+  const t = appState.transactions.find(x => String(x.id) === String(id));
+  if (!t) return;
+  document.getElementById('edit-id').value    = t.id;
+  document.getElementById('edit-date').value  = t.date;
+  document.getElementById('edit-item').value  = t.item_name;
+  document.getElementById('edit-rate').value  = t.rate;
+  document.getElementById('edit-total').value = t.total;
+  document.getElementById('edit-notes').value = t.notes;
+  openModal('modal-edit');
+}
+
+document.getElementById('btn-save-edit').addEventListener('click', async () => {
+  showLoader(true);
+  try {
+    const data = await apiCall({
+      action:'edit_transaction',
+      token: appState.token,
+      id:        document.getElementById('edit-id').value,
+      date:      document.getElementById('edit-date').value,
+      item_name: document.getElementById('edit-item').value,
+      rate:      document.getElementById('edit-rate').value,
+      total:     document.getElementById('edit-total').value,
+      notes:     document.getElementById('edit-notes').value
+    });
+    if (data.success) {
+      showToast('Transaction updated!', 'success');
+      closeModal('modal-edit');
+      await loadAdminDashboard();
+      renderAdminTransactions();
+    } else { showToast(data.message, 'error'); }
+  } catch(e) { showToast('Network error.', 'error'); }
+  showLoader(false);
+});
+
+// --- Delete Confirm ---
+let pendingDeleteId = null;
+let pendingConfirmType = null; // 'delete_transaction' | 'remove_user'
+let pendingRemoveUser  = null;
+
+function confirmDelete(id, name) {
+  pendingDeleteId     = id;
+  pendingConfirmType  = 'delete_transaction';
+  pendingRemoveUser   = null;
+  document.getElementById('confirm-message').textContent = `Delete "${name}"? This is permanent.`;
+  document.getElementById('btn-confirm-action').innerHTML = '<span>🗑️</span> Delete';
+  openModal('modal-confirm');
+}
+
+function confirmRemoveUser(username) {
+  pendingRemoveUser   = username;
+  pendingConfirmType  = 'remove_user';
+  pendingDeleteId     = null;
+  document.getElementById('confirm-message').textContent = `Remove user "${username}"? They won't be able to log in.`;
+  document.getElementById('btn-confirm-action').innerHTML = '<span>🗑️</span> Remove';
+  openModal('modal-confirm');
+}
+
+document.getElementById('btn-confirm-action').addEventListener('click', async () => {
+  showLoader(true);
+  try {
+    if (pendingConfirmType === 'delete_transaction' && pendingDeleteId) {
+      const data = await apiCall({ action:'delete_transaction', token: appState.token, id: pendingDeleteId });
+      if (data.success) {
+        showToast('Transaction deleted.', 'success');
+        closeModal('modal-confirm');
+        pendingDeleteId = null;
+        pendingConfirmType = null;
+        await loadAdminDashboard();
+        renderAdminTransactions();
+      } else { showToast(data.message, 'error'); }
+
+    } else if (pendingConfirmType === 'remove_user' && pendingRemoveUser) {
+      const data = await apiCall({ action:'remove_user', token: appState.token, target_username: pendingRemoveUser });
+      if (data.success) {
+        showToast('User removed.', 'success');
+        closeModal('modal-confirm');
+        pendingRemoveUser = null;
+        pendingConfirmType = null;
+        await loadAdminDashboard();
+        renderAdminUsers();
+      } else { showToast(data.message, 'error'); }
+    }
+  } catch(e) { showToast('Network error.', 'error'); }
+  showLoader(false);
+});
+
+// --- Admin Add Transaction ---
+function populateAdminAddUserSelect() {
+  const sel = document.getElementById('admin-add-user');
+  sel.innerHTML = '<option value="">Select user</option>';
+  (appState.users || []).forEach(u => { sel.innerHTML += `<option value="${u.username}">${u.username} (${u.role})</option>`; });
+}
+document.getElementById('btn-admin-add-entry').addEventListener('click', async () => {
+  const user  = document.getElementById('admin-add-user').value;
+  const item  = document.getElementById('admin-add-item').value.trim();
+  const rate  = document.getElementById('admin-add-rate').value;
+  const total = document.getElementById('admin-add-total').value;
+  const notes = document.getElementById('admin-add-notes').value.trim();
+  const date  = document.getElementById('admin-add-date').value || today();
+
+  if (!user || !item || !rate || !total) { showToast('User, item, rate, and total are required.', 'warning'); return; }
+
+  showLoader(true);
+  try {
+    // Admin adds on behalf — we call add_transaction but override user in backend.
+    // Since backend uses session.username, we make a special payload.
+    // For simplicity: we store the selected user directly. The backend trusts admin token.
+    const data = await apiCall({
+      action:'add_transaction', token: appState.token,
+      date, item_name: item, rate, total, notes,
+      override_user: user   // backend will use this if present and role=admin
+    });
+    if (data.success) {
+      showToast('Transaction added for ' + user + '!', 'success');
+      ['admin-add-item','admin-add-rate','admin-add-total','admin-add-notes'].forEach(id => document.getElementById(id).value='');
+      document.getElementById('admin-add-date').value = today();
+      document.getElementById('admin-add-user').value = '';
+      await loadAdminDashboard();
+    } else { showToast(data.message, 'error'); }
+  } catch(e) { showToast('Network error.', 'error'); }
+  showLoader(false);
+});
+document.getElementById('btn-admin-clear-form').addEventListener('click', () => {
+  ['admin-add-user','admin-add-item','admin-add-rate','admin-add-total','admin-add-notes'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('admin-add-date').value = today();
+});
+
+// --- Manage Users ---
+async function renderAdminUsers() {
+  const data = await apiCall({ action:'get_users', token: appState.token });
+  if (data.success) appState.users = data.users;
+  const container = document.getElementById('admin-users-list');
+  const empty     = document.getElementById('admin-users-empty');
+  
+  if (!appState.users.length) { 
+    container.innerHTML = '';
+    empty.classList.remove('hidden'); 
+    return; 
+  }
+  
+  empty.classList.add('hidden');
+  container.innerHTML = appState.users.map(u => {
+    const canDelete = u.username !== appState.username; // can't delete self
+    return `<div class="user-item">
+      <div class="user-item-avatar">${u.username.charAt(0).toUpperCase()}</div>
+      <div class="user-item-info">
+        <h5>${escHtml(u.username)} <span class="badge ${u.role==='admin'?'badge-admin':'badge-user'}">${u.role}</span></h5>
+      </div>
+      ${canDelete ? `<button class="btn btn-danger btn-sm" onclick="confirmRemoveUser('${u.username}')">Remove</button>` : '<span style="font-size:.75rem;color:var(--clr-text-light);">You</span>'}
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('btn-open-add-user').addEventListener('click', () => openModal('modal-add-user'));
+document.getElementById('btn-create-user').addEventListener('click', async () => {
+  const name = document.getElementById('new-user-name').value.trim();
+  const pass = document.getElementById('new-user-pass').value.trim();
+  const role = document.getElementById('new-user-role').value;
+  if (!name || !pass) { showToast('Username and password are required.', 'warning'); return; }
+
+  showLoader(true);
+  try {
+    const data = await apiCall({ action:'add_user', token: appState.token, new_username: name, new_password: pass, new_role: role });
+    if (data.success) {
+      showToast('User created!', 'success');
+      closeModal('modal-add-user');
+      document.getElementById('new-user-name').value = '';
+      document.getElementById('new-user-pass').value = '';
+      document.getElementById('new-user-role').value = 'user';
+      await renderAdminUsers();
+    } else { showToast(data.message, 'error'); }
+  } catch(e) { showToast('Network error.', 'error'); }
+  showLoader(false);
+});
+
+// ================================================================
+// XSS GUARD
+// ================================================================
+function escHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+}
+
+// ================================================================
+// ADMIN override_user support — patch Code.gs handleAddTransaction
+// (The frontend sends override_user; backend must honor it.)
+// This is handled in the updated Code.gs below.
+// ================================================================
+
+// ================================================================
+// INIT
+// ================================================================
+// Set today's date on page load
+document.getElementById('new-date').value = today();
+document.getElementById('admin-add-date').value = today();
+</script>
+</body>
+</html>
